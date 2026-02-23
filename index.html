@@ -4,660 +4,408 @@
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 <title>Comunicazione a 4 Tempi — Il Gioco</title>
-<link href="https://fonts.googleapis.com/css2?family=DM+Serif+Display:ital@0;1&family=DM+Sans:wght@400;500;600;700&display=swap" rel="stylesheet">
+<link href="https://fonts.googleapis.com/css2?family=Playfair+Display:wght@600;700&family=Source+Sans+3:wght@400;500;600;700&display=swap" rel="stylesheet">
 <style>
-  :root {
-    --acqua: #2E86AB;
-    --terra: #5B8C5A;
-    --fuoco: #D64933;
-    --aria: #E8A838;
-    --bg: #FAF7F2;
-    --ink: #2C2C2C;
-    --ink-light: #6B6B6B;
-    --card: #FFFFFF;
-    --shadow: 0 2px 16px rgba(0,0,0,0.08);
-    --shadow-hover: 0 6px 24px rgba(0,0,0,0.14);
-    --radius: 12px;
-    --correct: #3DA35D;
-    --wrong: #D64933;
-  }
-  * { margin:0; padding:0; box-sizing:border-box; }
-  body {
-    font-family: 'DM Sans', sans-serif;
-    background: var(--bg);
-    color: var(--ink);
-    min-height: 100vh;
-    overflow-x: hidden;
-  }
-  .game-header {
-    text-align: center;
-    padding: 20px 20px 10px;
-  }
-  .game-header h1 {
-    font-family: 'DM Serif Display', serif;
-    font-size: clamp(1.6rem, 4vw, 2.4rem);
-    color: var(--ink);
-    letter-spacing: -0.5px;
-    margin-bottom: 6px;
-  }
-  .game-header .subtitle {
-    font-size: 0.95rem;
-    color: var(--ink-light);
-  }
-  .level-bar {
-    display: flex;
-    justify-content: center;
-    gap: 6px;
-    padding: 8px 20px;
-    flex-wrap: wrap;
-  }
-  .level-btn {
-    padding: 6px 14px;
-    border: 2px solid #ddd;
-    border-radius: 30px;
-    background: var(--card);
-    font-family: 'DM Sans', sans-serif;
-    font-size: 0.8rem;
-    font-weight: 600;
-    cursor: pointer;
-    transition: all 0.25s ease;
-    color: var(--ink-light);
-    user-select: none;
-  }
-  .level-btn:hover { border-color: var(--acqua); color: var(--acqua); }
-  .level-btn.active { background: var(--ink); color: #fff; border-color: var(--ink); }
-  .level-btn .check { display: inline-block; margin-left: 4px; color: var(--correct); }
-  .score-bar {
-    display: flex;
-    justify-content: center;
-    gap: 24px;
-    padding: 4px 20px 12px;
-    font-size: 0.82rem;
-    color: var(--ink-light);
-  }
-  .score-bar span { font-weight: 600; color: var(--ink); }
-  .game-container {
-    max-width: 1060px;
-    margin: 0 auto;
-    padding: 0 20px 20px;
-  }
-  .instructions {
-    background: var(--card);
-    border-radius: var(--radius);
-    padding: 12px 18px;
-    margin-bottom: 14px;
-    box-shadow: var(--shadow);
-    font-size: 0.88rem;
-    line-height: 1.5;
-    border-left: 4px solid var(--acqua);
-  }
-  .instructions strong { color: var(--acqua); }
+*{margin:0;padding:0;box-sizing:border-box}
+:root{
+  --c1:#D4870E;--c2:#1B7F8F;--c3:#3D7B3F;--c4:#C0392B;
+  --c1-bg:#FFF8EC;--c2-bg:#EEF8F9;--c3-bg:#EFF6EF;--c4-bg:#FDF0EF;
+  --c1-border:#F0D8A8;--c2-border:#A8D8DC;--c3-border:#B0D4B0;--c4-border:#E8B4AE;
+  --bg:#F6F3EE;--card:#fff;--ink:#1E1E1E;--muted:#7A7A7A;--border:#E2DED6;
+  --ok:#2E8B57;--err:#C0392B;
+  --r:10px;
+  --font-display:'Playfair Display',Georgia,serif;
+  --font-body:'Source Sans 3','Source Sans Pro',system-ui,sans-serif;
+}
+html{font-size:15px}
+body{font-family:var(--font-body);background:var(--bg);color:var(--ink);min-height:100vh}
 
-  /* ── GRID LAYOUT (stili) ── */
-  .drop-grid {
-    display: grid;
-    grid-template-columns: 1fr 1fr;
-    gap: 16px;
-    margin-bottom: 28px;
-  }
-  @media (max-width: 600px) { .drop-grid { grid-template-columns: 1fr; } }
+/* ── TOPBAR ── */
+.topbar{
+  background:var(--card);border-bottom:1px solid var(--border);
+  padding:14px 24px 10px;text-align:center;
+  position:sticky;top:0;z-index:100;
+}
+.topbar h1{font-family:var(--font-display);font-size:1.35rem;letter-spacing:-0.3px;margin-bottom:2px}
+.topbar .sub{font-size:.78rem;color:var(--muted);margin-bottom:10px}
+.levels{display:flex;justify-content:center;gap:5px;flex-wrap:wrap}
+.lvl{
+  padding:5px 13px;border:1.5px solid var(--border);border-radius:20px;
+  background:var(--card);font:600 .73rem var(--font-body);
+  color:var(--muted);cursor:pointer;transition:.2s;user-select:none;
+}
+.lvl:hover{border-color:var(--c2);color:var(--c2)}
+.lvl.on{background:var(--ink);color:#fff;border-color:var(--ink)}
+.lvl .ck{color:var(--ok);margin-left:3px}
+.meta{font-size:.72rem;color:var(--muted);margin-top:6px}
+.meta b{color:var(--ink);font-weight:700}
 
-  /* ── COMPASS LAYOUT (4 tempi) ── */
-  .compass-layout {
-    display: grid;
-    grid-template-columns: 1fr 0.8fr 1fr;
-    grid-template-rows: auto auto auto;
-    grid-template-areas:
-      ".      top    ."
-      "left   center right"
-      ".      bottom .";
-    gap: 8px;
-    margin-bottom: 16px;
-    align-items: center;
-  }
-  .compass-top    { grid-area: top; }
-  .compass-right  { grid-area: right; }
-  .compass-bottom { grid-area: bottom; }
-  .compass-left   { grid-area: left; }
-  .compass-center { grid-area: center; display: flex; align-items: center; justify-content: center; }
+/* ── MAIN ── */
+.main{max-width:1100px;margin:0 auto;padding:12px 20px 24px}
+.hint{
+  background:var(--c2-bg);border-left:3px solid var(--c2);
+  border-radius:var(--r);padding:10px 16px;margin-bottom:14px;
+  font-size:.84rem;line-height:1.45;
+}
+.hint strong{color:var(--c2)}
 
-  .compass-hub {
-    width: 100%; aspect-ratio: 1;
-    max-width: 130px;
-    border-radius: 50%;
-    background: radial-gradient(circle, #f8f5f0 0%, #ece7df 100%);
-    border: 2px solid #ddd;
-    display: flex; align-items: center; justify-content: center;
-    position: relative;
-    margin: 0 auto;
-  }
-  .compass-hub::before, .compass-hub::after {
-    content: ''; position: absolute; background: #d0cdc6;
-  }
-  .compass-hub::before { width: 1px; height: 80%; top: 10%; left: 50%; }
-  .compass-hub::after  { height: 1px; width: 80%; left: 10%; top: 50%; }
+/* ── DROP ZONE shared ── */
+.dz{
+  background:var(--card);border:2px dashed var(--border);border-radius:var(--r);
+  padding:12px 14px;transition:.2s;position:relative;
+}
+.dz.over{border-style:solid;transform:scale(1.015)}
+.dz-head{
+  display:flex;align-items:center;gap:7px;
+  margin-bottom:8px;padding-bottom:6px;
+  border-bottom:1.5px solid #f0ede8;
+}
+.dz-num{
+  width:24px;height:24px;border-radius:50%;display:flex;align-items:center;justify-content:center;
+  font:700 .72rem var(--font-body);color:#fff;flex-shrink:0;
+}
+.dz-dot{width:10px;height:10px;border-radius:50%;flex-shrink:0}
+.dz-label{font-family:var(--font-display);font-size:.95rem;font-weight:700}
+.dz-items{display:flex;flex-wrap:wrap;gap:5px;min-height:28px}
 
-  .hub-labels {
-    position: relative; z-index: 1;
-    text-align: center;
-    font-size: 0.55rem;
-    font-weight: 700;
-    text-transform: uppercase;
-    letter-spacing: 0.6px;
-    line-height: 1.5;
-  }
-  .hub-top { color: var(--aria); }
-  .hub-right { color: var(--acqua); }
-  .hub-bottom { color: var(--terra); }
-  .hub-left { color: var(--fuoco); }
-  .hub-mid { display: flex; gap: 12px; justify-content: center; margin: 2px 0; }
+/* zone color variants */
+.dz-1{border-color:var(--c1-border);background:var(--c1-bg)}
+.dz-1 .dz-num,.dz-1 .dz-dot{background:var(--c1)}
+.dz-1 .dz-label{color:var(--c1)}
+.dz-1.over{border-color:var(--c1);box-shadow:0 0 0 3px var(--c1-bg)}
 
-  /* Arrows between zones */
-  .compass-arrow {
-    position: absolute;
-    color: #ccc;
-    font-size: 1.4rem;
-    z-index: 2;
-    pointer-events: none;
-  }
+.dz-2{border-color:var(--c2-border);background:var(--c2-bg)}
+.dz-2 .dz-num,.dz-2 .dz-dot{background:var(--c2)}
+.dz-2 .dz-label{color:var(--c2)}
+.dz-2.over{border-color:var(--c2);box-shadow:0 0 0 3px var(--c2-bg)}
 
-  @media (max-width: 700px) {
-    .compass-layout {
-      grid-template-columns: 1fr;
-      grid-template-areas: "top" "right" "bottom" "left";
-      gap: 12px;
-    }
-    .compass-center { display: none; }
-  }
+.dz-3{border-color:var(--c3-border);background:var(--c3-bg)}
+.dz-3 .dz-num,.dz-3 .dz-dot{background:var(--c3)}
+.dz-3 .dz-label{color:var(--c3)}
+.dz-3.over{border-color:var(--c3);box-shadow:0 0 0 3px var(--c3-bg)}
 
-  /* ── DROP ZONE (shared) ── */
-  .drop-zone {
-    background: var(--card);
-    border: 2px dashed #d0d0d0;
-    border-radius: var(--radius);
-    padding: 10px;
-    min-height: 80px;
-    transition: all 0.25s ease;
-    position: relative;
-  }
-  .drop-zone.drag-over {
-    border-color: var(--acqua);
-    background: #f0f7fa;
-    transform: scale(1.01);
-  }
-  .drop-zone .zone-title {
-    font-family: 'DM Serif Display', serif;
-    font-size: 0.82rem;
-    margin-bottom: 6px;
-    padding-bottom: 4px;
-    border-bottom: 2px solid #eee;
-    display: flex; align-items: center; gap: 6px;
-  }
-  .drop-zone .zone-title .num {
-    display: inline-flex; align-items: center; justify-content: center;
-    width: 20px; height: 20px; border-radius: 50%;
-    font-family: 'DM Sans', sans-serif;
-    font-size: 0.7rem; font-weight: 700; color: #fff; flex-shrink: 0;
-  }
-  .drop-zone .zone-title .dot {
-    width: 10px; height: 10px; border-radius: 50%; flex-shrink: 0;
-  }
-  .drop-zone .zone-items {
-    display: flex; flex-wrap: wrap; gap: 6px; min-height: 32px;
-  }
+.dz-4{border-color:var(--c4-border);background:var(--c4-bg)}
+.dz-4 .dz-num,.dz-4 .dz-dot{background:var(--c4)}
+.dz-4 .dz-label{color:var(--c4)}
+.dz-4.over{border-color:var(--c4);box-shadow:0 0 0 3px var(--c4-bg)}
 
-  /* Zone colors: 4 tempi */
-  .zone-apertura .zone-title { color: var(--aria); }
-  .zone-apertura .num { background: var(--aria); }
-  .zone-bisogni .zone-title { color: var(--acqua); }
-  .zone-bisogni .num { background: var(--acqua); }
-  .zone-argomentazioni .zone-title { color: var(--terra); }
-  .zone-argomentazioni .num { background: var(--terra); }
-  .zone-chiusura .zone-title { color: var(--fuoco); }
-  .zone-chiusura .num { background: var(--fuoco); }
+/* ── COMPASS LAYOUT ── */
+.compass{
+  display:grid;
+  grid-template-columns:1.1fr auto 1.1fr;
+  grid-template-rows:auto auto auto;
+  grid-template-areas:"_ top _2" "left hub right" "_3 bot _4";
+  gap:10px;margin-bottom:14px;
+  justify-items:stretch;align-items:center;
+}
+.compass-top{grid-area:top}
+.compass-right{grid-area:right}
+.compass-bot{grid-area:bot}
+.compass-left{grid-area:left}
+.compass-hub{
+  grid-area:hub;
+  width:140px;height:140px;margin:0 auto;
+  border-radius:50%;
+  background:radial-gradient(circle,#faf8f4,#ede9e0);
+  border:2px solid var(--border);
+  display:flex;align-items:center;justify-content:center;
+  position:relative;
+}
+.compass-hub::before,.compass-hub::after{content:'';position:absolute;background:#ccc8be}
+.compass-hub::before{width:1px;height:70%;top:15%;left:50%}
+.compass-hub::after{height:1px;width:70%;left:15%;top:50%}
+.hub-t{position:absolute;font:700 .6rem var(--font-body);text-transform:uppercase;letter-spacing:.5px}
+.hub-n{top:14px;color:var(--c1)}
+.hub-s{bottom:14px;color:var(--c3)}
+.hub-w{left:10px;color:var(--c4)}
+.hub-e{right:10px;color:var(--c2)}
 
-  /* Zone colors: stili */
-  .zone-adattivo .zone-title { color: var(--aria); }
-  .zone-adattivo .dot { background: var(--aria); }
-  .zone-divergente .zone-title { color: var(--acqua); }
-  .zone-divergente .dot { background: var(--acqua); }
-  .zone-assimilativo .zone-title { color: var(--terra); }
-  .zone-assimilativo .dot { background: var(--terra); }
-  .zone-convergente .zone-title { color: var(--fuoco); }
-  .zone-convergente .dot { background: var(--fuoco); }
+/* Frecce circolari decorative */
+.hub-arrow{
+  position:absolute;font-size:.85rem;color:#bbb;
+}
+.hub-a1{top:6px;right:20px;transform:rotate(45deg)}
+.hub-a2{bottom:6px;left:20px;transform:rotate(-135deg)}
 
-  /* Zone colors: assi */
-  .zone-ec .zone-title { color: var(--aria); }
-  .zone-ec .dot { background: var(--aria); }
-  .zone-or .zone-title { color: var(--acqua); }
-  .zone-or .dot { background: var(--acqua); }
-  .zone-ca .zone-title { color: var(--terra); }
-  .zone-ca .dot { background: var(--terra); }
-  .zone-sa .zone-title { color: var(--fuoco); }
-  .zone-sa .dot { background: var(--fuoco); }
+@media(max-width:720px){
+  .compass{grid-template-columns:1fr;grid-template-areas:"top""right""bot""left";gap:10px}
+  .compass-hub{display:none}
+}
 
-  /* ── WORD BANK ── */
-  .word-bank {
-    background: var(--card);
-    border-radius: var(--radius);
-    padding: 14px;
-    box-shadow: var(--shadow);
-  }
-  .word-bank-title {
-    font-size: 0.75rem; text-transform: uppercase;
-    letter-spacing: 1.2px; color: var(--ink-light);
-    margin-bottom: 8px; font-weight: 700;
-  }
-  .word-bank-items { display: flex; flex-wrap: wrap; gap: 6px; }
+/* ── GRID 2×2 LAYOUT ── */
+.grid4{display:grid;grid-template-columns:1fr 1fr;gap:12px;margin-bottom:14px}
+@media(max-width:600px){.grid4{grid-template-columns:1fr}}
 
-  /* ── DRAGGABLE ── */
-  .drag-item {
-    padding: 5px 11px;
-    background: #F2F0EC;
-    border: 1.5px solid #ddd;
-    border-radius: 8px;
-    font-size: 0.78rem;
-    font-weight: 500;
-    cursor: grab;
-    user-select: none;
-    transition: all 0.2s ease;
-    touch-action: none;
-  }
-  .drag-item:hover { box-shadow: var(--shadow-hover); transform: translateY(-1px); border-color: #bbb; }
-  .drag-item.dragging { opacity: 0.4; cursor: grabbing; }
-  .drag-item.correct { background: #e8f5e9; border-color: var(--correct); color: var(--correct); cursor: default; }
-  .drag-item.wrong { background: #ffebee; border-color: var(--wrong); color: var(--wrong); animation: shake 0.4s ease; }
+/* ── WORD BANK ── */
+.bank{
+  background:var(--card);border:1.5px solid var(--border);
+  border-radius:var(--r);padding:14px 16px;
+}
+.bank-label{font:700 .68rem var(--font-body);text-transform:uppercase;letter-spacing:1px;color:var(--muted);margin-bottom:8px}
+.bank-items{display:flex;flex-wrap:wrap;gap:7px}
 
-  @keyframes shake {
-    0%,100% { transform: translateX(0); }
-    20% { transform: translateX(-6px); }
-    40% { transform: translateX(6px); }
-    60% { transform: translateX(-4px); }
-    80% { transform: translateX(4px); }
-  }
+/* ── DRAG ITEM ── */
+.chip{
+  padding:6px 13px;background:#F5F2EC;border:1.5px solid #d8d4cc;border-radius:7px;
+  font:500 .8rem var(--font-body);color:var(--ink);
+  cursor:grab;user-select:none;transition:.15s;touch-action:none;
+  line-height:1.3;
+}
+.chip:hover{border-color:#b0aca4;box-shadow:0 3px 10px rgba(0,0,0,.08);transform:translateY(-1px)}
+.chip.dragging{opacity:.35;cursor:grabbing}
+.chip.ok{background:#e3f3ea;border-color:var(--ok);color:var(--ok);cursor:default;font-weight:600}
+.chip.err{background:#fde8e8;border-color:var(--err);color:var(--err);animation:shake .35s}
+@keyframes shake{0%,100%{transform:translateX(0)}25%{transform:translateX(-5px)}75%{transform:translateX(5px)}}
 
-  .btn-row { display: flex; justify-content: center; gap: 12px; margin-top: 14px; flex-wrap: wrap; }
-  .btn {
-    padding: 10px 28px; border: none; border-radius: 30px;
-    font-family: 'DM Sans', sans-serif; font-size: 0.9rem;
-    font-weight: 700; cursor: pointer; transition: all 0.25s ease; user-select: none;
-  }
-  .btn-check { background: var(--ink); color: #fff; }
-  .btn-check:hover { background: #444; transform: translateY(-1px); }
-  .btn-reset { background: transparent; color: var(--ink-light); border: 2px solid #ddd; }
-  .btn-reset:hover { border-color: #bbb; color: var(--ink); }
+/* ── BUTTONS ── */
+.btns{display:flex;justify-content:center;gap:10px;margin-top:16px}
+.bt{
+  padding:10px 28px;border:none;border-radius:24px;
+  font:700 .88rem var(--font-body);cursor:pointer;transition:.2s;user-select:none;
+}
+.bt-go{background:var(--ink);color:#fff}
+.bt-go:hover{background:#333;transform:translateY(-1px)}
+.bt-rs{background:transparent;color:var(--muted);border:1.5px solid var(--border)}
+.bt-rs:hover{border-color:#bbb;color:var(--ink)}
 
-  .feedback {
-    text-align: center; margin-top: 12px; padding: 12px;
-    border-radius: var(--radius); font-weight: 600; font-size: 0.9rem; display: none;
-  }
-  .feedback.show { display: block; }
-  .feedback.perfect { background: #e8f5e9; color: var(--correct); }
-  .feedback.partial { background: #fff3e0; color: #e65100; }
+/* ── FEEDBACK ── */
+.fb{text-align:center;margin-top:12px;padding:11px;border-radius:var(--r);font-weight:600;font-size:.88rem;display:none}
+.fb.show{display:block}
+.fb.win{background:#e3f3ea;color:var(--ok)}
+.fb.try{background:#fff6e5;color:#b8650a}
 
-  .drag-ghost { position: fixed; pointer-events: none; z-index: 9999; opacity: 0.9; transform: scale(1.05); }
+/* ── GHOST (touch) ── */
+.ghost{position:fixed;pointer-events:none;z-index:9999;opacity:.92;transform:scale(1.06)}
 </style>
 </head>
 <body>
 
-<div class="game-header">
+<div class="topbar">
   <h1>Comunicazione a 4 Tempi</h1>
-  <p class="subtitle">Trascina ogni parola nella categoria corretta</p>
+  <p class="sub">Trascina ogni parola nella categoria corretta</p>
+  <div class="levels" id="levelBar"></div>
+  <div class="meta">
+    Punteggio <b id="sc">0</b>/<b id="tot">0</b>
+    &middot; Completati <b id="lc">0</b>/<b id="lt">0</b>
+  </div>
 </div>
-<div class="level-bar" id="levelBar"></div>
-<div class="score-bar">
-  Punteggio: <span id="scoreDisplay">0</span> / <span id="totalDisplay">0</span>
-  &nbsp;·&nbsp;
-  Livelli completati: <span id="levelsComplete">0</span> / <span id="levelsTotal">0</span>
-</div>
-<div class="game-container" id="gameContainer"></div>
+
+<div class="main" id="app"></div>
 
 <script>
-const LEVELS = [
+const L=[
   {
-    id: 'tempi',
-    title: '1. I 4 Tempi',
-    layout: 'compass',
-    instruction: 'Associa ogni descrizione al <strong>tempo comunicativo</strong> corretto. I 4 tempi seguono il percorso circolare del modello: dall\'apertura alla chiusura.',
-    zones: [
-      { id: 'apertura', label: 'Apertura e Connessione', css: 'zone-apertura', num: '1', pos: 'top' },
-      { id: 'bisogni', label: 'Condivisione dei Bisogni', css: 'zone-bisogni', num: '2', pos: 'right' },
-      { id: 'argomentazioni', label: 'Argomentazioni e Concetti', css: 'zone-argomentazioni', num: '3', pos: 'bottom' },
-      { id: 'chiusura', label: 'Chiusura e Spinta all\'Azione', css: 'zone-chiusura', num: '4', pos: 'left' }
+    id:'tempi',t:'1. I 4 Tempi',lay:'compass',
+    hint:'Associa ogni descrizione al <strong>tempo comunicativo</strong> corretto. I 4 tempi seguono il percorso circolare del modello.',
+    zones:[
+      {id:'apertura',label:'Apertura e Connessione',c:'dz-1',num:'1',pos:'top'},
+      {id:'bisogni',label:'Condivisione dei Bisogni',c:'dz-2',num:'2',pos:'right'},
+      {id:'argomentazioni',label:'Argomentazioni e Concetti',c:'dz-3',num:'3',pos:'bot'},
+      {id:'chiusura',label:'Chiusura e Spinta all\'Azione',c:'dz-4',num:'4',pos:'left'}
     ],
-    items: [
-      { text: 'Creare un ponte con l\'altro', zone: 'apertura' },
-      { text: 'Parlare la sua lingua', zone: 'apertura' },
-      { text: 'Prima la relazione', zone: 'apertura' },
-      { text: 'Richiesta ≠ Bisogno', zone: 'bisogni' },
-      { text: 'Le domande che aprono', zone: 'bisogni' },
-      { text: '"Cosa la preoccupa?"', zone: 'bisogni' },
-      { text: 'La regola dei 3', zone: 'argomentazioni' },
-      { text: 'Sicurezza, Efficacia, Risparmio', zone: 'argomentazioni' },
-      { text: 'Il cliente ricorda max 3 messaggi', zone: 'argomentazioni' },
-      { text: 'Accompagnare la decisione', zone: 'chiusura' },
-      { text: '"Vuole provare e poi ne riparliamo?"', zone: 'chiusura' },
-      { text: 'Non forzare ma guidare', zone: 'chiusura' }
+    items:[
+      {t:'Creare un ponte con l\'altro',z:'apertura'},
+      {t:'Parlare la sua lingua',z:'apertura'},
+      {t:'Prima la relazione',z:'apertura'},
+      {t:'Richiesta ≠ Bisogno',z:'bisogni'},
+      {t:'Le domande che aprono',z:'bisogni'},
+      {t:'"Cosa la preoccupa?"',z:'bisogni'},
+      {t:'La regola dei 3',z:'argomentazioni'},
+      {t:'Sicurezza, Efficacia, Risparmio',z:'argomentazioni'},
+      {t:'Il cliente ricorda max 3 messaggi',z:'argomentazioni'},
+      {t:'Accompagnare la decisione',z:'chiusura'},
+      {t:'"Vuole provare e poi ne riparliamo?"',z:'chiusura'},
+      {t:'Non forzare ma guidare',z:'chiusura'}
     ]
   },
   {
-    id: 'stili',
-    title: '2. I 4 Stili',
-    layout: 'grid',
-    instruction: 'Associa ogni caratteristica allo <strong>stile comunicativo</strong> corretto secondo il modello Kolb / Social Style.',
-    zones: [
-      { id: 'adattivo', label: 'Adattivo (Accomodatore)', css: 'zone-adattivo' },
-      { id: 'divergente', label: 'Divergente', css: 'zone-divergente' },
-      { id: 'assimilativo', label: 'Assimilativo', css: 'zone-assimilativo' },
-      { id: 'convergente', label: 'Convergente', css: 'zone-convergente' }
+    id:'stili',t:'2. I 4 Stili',lay:'grid',
+    hint:'Associa ogni caratteristica allo <strong>stile comunicativo</strong> corretto secondo il modello Kolb / Social Style.',
+    zones:[
+      {id:'adattivo',label:'Adattivo (Accomodatore)',c:'dz-1'},
+      {id:'divergente',label:'Divergente',c:'dz-2'},
+      {id:'assimilativo',label:'Assimilativo',c:'dz-3'},
+      {id:'convergente',label:'Convergente',c:'dz-4'}
     ],
-    items: [
-      { text: 'Cerca riconoscimento', zone: 'adattivo' },
-      { text: 'Ama divertirsi', zone: 'adattivo' },
-      { text: 'Impulsivo e emotivo', zone: 'adattivo' },
-      { text: 'Cerca armonia e cortesia', zone: 'divergente' },
-      { text: 'Supporta e aiuta', zone: 'divergente' },
-      { text: 'Vuole essere rassicurato', zone: 'divergente' },
-      { text: 'Accuratezza e controllo', zone: 'assimilativo' },
-      { text: 'Metodico e organizzato', zone: 'assimilativo' },
-      { text: 'Vuole dati e spazio per analizzarli', zone: 'assimilativo' },
-      { text: 'Controllo dei risultati', zone: 'convergente' },
-      { text: 'Efficiente e diretto', zone: 'convergente' },
-      { text: 'Va dritto allo scopo', zone: 'convergente' }
+    items:[
+      {t:'Cerca riconoscimento',z:'adattivo'},
+      {t:'Ama divertirsi',z:'adattivo'},
+      {t:'Impulsivo e emotivo',z:'adattivo'},
+      {t:'Cerca armonia e cortesia',z:'divergente'},
+      {t:'Supporta e aiuta',z:'divergente'},
+      {t:'Vuole essere rassicurato',z:'divergente'},
+      {t:'Accuratezza e controllo',z:'assimilativo'},
+      {t:'Metodico e organizzato',z:'assimilativo'},
+      {t:'Vuole dati e spazio per analizzarli',z:'assimilativo'},
+      {t:'Controllo dei risultati',z:'convergente'},
+      {t:'Efficiente e diretto',z:'convergente'},
+      {t:'Va dritto allo scopo',z:'convergente'}
     ]
   },
   {
-    id: 'assi',
-    title: '3. Gli Assi',
-    layout: 'grid',
-    instruction: 'Associa ogni concetto all\'<strong>asse del modello</strong> corretto. Gli assi rappresentano come raccogliamo e gestiamo le informazioni.',
-    zones: [
-      { id: 'ec', label: 'Esperienza Concreta', css: 'zone-ec' },
-      { id: 'or', label: 'Osservazione Riflessiva', css: 'zone-or' },
-      { id: 'ca', label: 'Concettualizzazione Astratta', css: 'zone-ca' },
-      { id: 'sa', label: 'Sperimentazione Attiva', css: 'zone-sa' }
+    id:'assi',t:'3. Gli Assi',lay:'grid',
+    hint:'Associa ogni concetto all\'<strong>asse del modello</strong> corretto.',
+    zones:[
+      {id:'ec',label:'Esperienza Concreta',c:'dz-1'},
+      {id:'or',label:'Osservazione Riflessiva',c:'dz-2'},
+      {id:'ca',label:'Concettualizzazione Astratta',c:'dz-3'},
+      {id:'sa',label:'Sperimentazione Attiva',c:'dz-4'}
     ],
-    items: [
-      { text: 'Percepire', zone: 'ec' },
-      { text: 'Relazioni', zone: 'ec' },
-      { text: 'Percorso intuitivo', zone: 'ec' },
-      { text: 'Osservare', zone: 'or' },
-      { text: 'Ascolto e Analisi', zone: 'or' },
-      { text: 'Tanti dettagli per esprimere un concetto', zone: 'or' },
-      { text: 'Pensare', zone: 'ca' },
-      { text: 'Contenuti', zone: 'ca' },
-      { text: 'Percorso analitico', zone: 'ca' },
-      { text: 'Fare', zone: 'sa' },
-      { text: 'Azione', zone: 'sa' },
-      { text: 'Poche parole per esprimere un concetto', zone: 'sa' }
+    items:[
+      {t:'Percepire',z:'ec'},{t:'Relazioni',z:'ec'},{t:'Percorso intuitivo',z:'ec'},
+      {t:'Osservare',z:'or'},{t:'Ascolto e Analisi',z:'or'},{t:'Tanti dettagli per un concetto',z:'or'},
+      {t:'Pensare',z:'ca'},{t:'Contenuti',z:'ca'},{t:'Percorso analitico',z:'ca'},
+      {t:'Fare',z:'sa'},{t:'Azione',z:'sa'},{t:'Poche parole per un concetto',z:'sa'}
     ]
   },
   {
-    id: 'bisogni_stili',
-    title: '4. Bisogni degli Stili',
-    layout: 'grid',
-    instruction: 'Ogni stile ha bisogni specifici. Abbina ciascun <strong>bisogno</strong> allo stile corrispondente.',
-    zones: [
-      { id: 'adattivo', label: 'Adattivo (Accomodatore)', css: 'zone-adattivo' },
-      { id: 'divergente', label: 'Divergente', css: 'zone-divergente' },
-      { id: 'assimilativo', label: 'Assimilativo', css: 'zone-assimilativo' },
-      { id: 'convergente', label: 'Convergente', css: 'zone-convergente' }
+    id:'bisogni',t:'4. Bisogni',lay:'grid',
+    hint:'Abbina ciascun <strong>bisogno</strong> allo stile corrispondente.',
+    zones:[
+      {id:'adattivo',label:'Adattivo (Accomodatore)',c:'dz-1'},
+      {id:'divergente',label:'Divergente',c:'dz-2'},
+      {id:'assimilativo',label:'Assimilativo',c:'dz-3'},
+      {id:'convergente',label:'Convergente',c:'dz-4'}
     ],
-    items: [
-      { text: 'Visione d\'insieme', zone: 'adattivo' },
-      { text: 'Soluzioni consensuali', zone: 'adattivo' },
-      { text: 'Coinvolgimento', zone: 'adattivo' },
-      { text: 'Rassicurazione sulle scelte', zone: 'divergente' },
-      { text: 'Comprensione della prospettiva', zone: 'divergente' },
-      { text: 'Mettere a proprio agio', zone: 'divergente' },
-      { text: 'Informazioni dettagliate', zone: 'assimilativo' },
-      { text: 'Tempo per analizzare', zone: 'assimilativo' },
-      { text: 'Presidio dei processi', zone: 'assimilativo' },
-      { text: 'Efficienza nei risultati', zone: 'convergente' },
-      { text: 'Coerenza negli atteggiamenti', zone: 'convergente' },
-      { text: 'Velocità d\'azione', zone: 'convergente' }
+    items:[
+      {t:'Visione d\'insieme',z:'adattivo'},{t:'Soluzioni consensuali',z:'adattivo'},{t:'Coinvolgimento',z:'adattivo'},
+      {t:'Rassicurazione sulle scelte',z:'divergente'},{t:'Comprensione della prospettiva',z:'divergente'},{t:'Mettere a proprio agio',z:'divergente'},
+      {t:'Informazioni dettagliate',z:'assimilativo'},{t:'Tempo per analizzare',z:'assimilativo'},{t:'Presidio dei processi',z:'assimilativo'},
+      {t:'Efficienza nei risultati',z:'convergente'},{t:'Coerenza negli atteggiamenti',z:'convergente'},{t:'Velocità d\'azione',z:'convergente'}
     ]
   },
   {
-    id: 'forze_deb',
-    title: '5. Punti di Forza',
-    layout: 'grid',
-    instruction: 'Associa ciascun <strong>punto di forza</strong> allo stile comunicativo corretto.',
-    zones: [
-      { id: 'adattivo', label: 'Adattivo (Accomodatore)', css: 'zone-adattivo' },
-      { id: 'divergente', label: 'Divergente', css: 'zone-divergente' },
-      { id: 'assimilativo', label: 'Assimilativo', css: 'zone-assimilativo' },
-      { id: 'convergente', label: 'Convergente', css: 'zone-convergente' }
+    id:'forze',t:'5. Punti di Forza',lay:'grid',
+    hint:'Associa ciascun <strong>punto di forza</strong> allo stile corretto.',
+    zones:[
+      {id:'adattivo',label:'Adattivo (Accomodatore)',c:'dz-1'},
+      {id:'divergente',label:'Divergente',c:'dz-2'},
+      {id:'assimilativo',label:'Assimilativo',c:'dz-3'},
+      {id:'convergente',label:'Convergente',c:'dz-4'}
     ],
-    items: [
-      { text: 'Persuasione', zone: 'adattivo' },
-      { text: 'Intrattenimento', zone: 'adattivo' },
-      { text: 'Diffusione', zone: 'adattivo' },
-      { text: 'Ascolto', zone: 'divergente' },
-      { text: 'Teamwork', zone: 'divergente' },
-      { text: 'Esecuzione', zone: 'divergente' },
-      { text: 'Pianificazione', zone: 'assimilativo' },
-      { text: 'Sistematizzazione', zone: 'assimilativo' },
-      { text: 'Orchestrazione', zone: 'assimilativo' },
-      { text: 'Leadership', zone: 'convergente' },
-      { text: 'Iniziativa e organizzazione', zone: 'convergente' },
-      { text: 'Efficienza e risultati', zone: 'convergente' }
+    items:[
+      {t:'Persuasione',z:'adattivo'},{t:'Intrattenimento',z:'adattivo'},{t:'Diffusione',z:'adattivo'},
+      {t:'Ascolto',z:'divergente'},{t:'Teamwork',z:'divergente'},{t:'Esecuzione',z:'divergente'},
+      {t:'Pianificazione',z:'assimilativo'},{t:'Sistematizzazione',z:'assimilativo'},{t:'Orchestrazione',z:'assimilativo'},
+      {t:'Leadership',z:'convergente'},{t:'Iniziativa e organizzazione',z:'convergente'},{t:'Efficienza e risultati',z:'convergente'}
     ]
   },
   {
-    id: 'centri',
-    title: '6. Centri di Interesse',
-    layout: 'grid',
-    instruction: 'Ogni stile è interessato a contenuti diversi. Associa ciascun <strong>centro di interesse</strong> allo stile corretto.',
-    zones: [
-      { id: 'adattivo', label: 'Adattivo (Accomodatore)', css: 'zone-adattivo' },
-      { id: 'divergente', label: 'Divergente', css: 'zone-divergente' },
-      { id: 'assimilativo', label: 'Assimilativo', css: 'zone-assimilativo' },
-      { id: 'convergente', label: 'Convergente', css: 'zone-convergente' }
+    id:'centri',t:'6. Centri di Interesse',lay:'grid',
+    hint:'Associa ciascun <strong>centro di interesse</strong> allo stile corretto.',
+    zones:[
+      {id:'adattivo',label:'Adattivo (Accomodatore)',c:'dz-1'},
+      {id:'divergente',label:'Divergente',c:'dz-2'},
+      {id:'assimilativo',label:'Assimilativo',c:'dz-3'},
+      {id:'convergente',label:'Convergente',c:'dz-4'}
     ],
-    items: [
-      { text: 'Opinioni personali', zone: 'adattivo' },
-      { text: 'Casi pratici', zone: 'adattivo' },
-      { text: 'Immagini accattivanti', zone: 'adattivo' },
-      { text: 'Persona al centro', zone: 'divergente' },
-      { text: 'Sicurezza e affidabilità', zone: 'divergente' },
-      { text: 'Condivisione degli esperti', zone: 'divergente' },
-      { text: 'Accuratezza nei razionali', zone: 'assimilativo' },
-      { text: 'Numero e qualità dei dati', zone: 'assimilativo' },
-      { text: 'Risultati di efficacia', zone: 'convergente' },
-      { text: 'Velocità d\'azione', zone: 'convergente' },
-      { text: 'Principali vantaggi d\'uso', zone: 'convergente' }
+    items:[
+      {t:'Opinioni personali',z:'adattivo'},{t:'Casi pratici',z:'adattivo'},{t:'Immagini accattivanti',z:'adattivo'},
+      {t:'Persona al centro',z:'divergente'},{t:'Sicurezza e affidabilità',z:'divergente'},{t:'Condivisione degli esperti',z:'divergente'},
+      {t:'Accuratezza nei razionali',z:'assimilativo'},{t:'Numero e qualità dei dati',z:'assimilativo'},
+      {t:'Risultati di efficacia',z:'convergente'},{t:'Velocità d\'azione',z:'convergente'},{t:'Principali vantaggi d\'uso',z:'convergente'}
     ]
   },
   {
-    id: 'stress',
-    title: '7. Sotto Stress',
-    layout: 'grid',
-    instruction: 'Come reagisce ogni stile <strong>sotto stress</strong>? Associa i comportamenti al profilo corretto.',
-    zones: [
-      { id: 'adattivo', label: 'Adattivo (Accomodatore)', css: 'zone-adattivo' },
-      { id: 'divergente', label: 'Divergente', css: 'zone-divergente' },
-      { id: 'assimilativo', label: 'Assimilativo', css: 'zone-assimilativo' },
-      { id: 'convergente', label: 'Convergente', css: 'zone-convergente' }
+    id:'stress',t:'7. Sotto Stress',lay:'grid',
+    hint:'Come reagisce ogni stile <strong>sotto stress</strong>?',
+    zones:[
+      {id:'adattivo',label:'Adattivo (Accomodatore)',c:'dz-1'},
+      {id:'divergente',label:'Divergente',c:'dz-2'},
+      {id:'assimilativo',label:'Assimilativo',c:'dz-3'},
+      {id:'convergente',label:'Convergente',c:'dz-4'}
     ],
-    items: [
-      { text: 'Diventa impulsivo', zone: 'adattivo' },
-      { text: 'Poco selettivo', zone: 'adattivo' },
-      { text: 'Diventa sedentario e rigido', zone: 'divergente' },
-      { text: 'Eccesso di sensibilità', zone: 'divergente' },
-      { text: 'Diventa rigido e critico', zone: 'assimilativo' },
-      { text: 'Perfezionismo eccessivo', zone: 'assimilativo' },
-      { text: 'Diventa direttivo', zone: 'convergente' },
-      { text: 'Arrogante e spietato', zone: 'convergente' }
+    items:[
+      {t:'Diventa impulsivo',z:'adattivo'},{t:'Poco selettivo',z:'adattivo'},
+      {t:'Diventa sedentario e rigido',z:'divergente'},{t:'Eccesso di sensibilità',z:'divergente'},
+      {t:'Diventa rigido e critico',z:'assimilativo'},{t:'Perfezionismo eccessivo',z:'assimilativo'},
+      {t:'Diventa direttivo',z:'convergente'},{t:'Arrogante e spietato',z:'convergente'}
     ]
   }
 ];
 
-let currentLevel = 0, score = 0, totalAttempted = 0, completedLevels = new Set();
+let cur=0,score=0,done=new Set();
 
-function renderLevelBar() {
-  document.getElementById('levelBar').innerHTML = LEVELS.map((l, i) => `
-    <button class="level-btn ${i === currentLevel ? 'active' : ''}" onclick="switchLevel(${i})">
-      ${l.title}${completedLevels.has(i) ? '<span class="check">✓</span>' : ''}
-    </button>
-  `).join('');
-  document.getElementById('levelsTotal').textContent = LEVELS.length;
-  document.getElementById('levelsComplete').textContent = completedLevels.size;
+/* ── RENDER ── */
+function bar(){
+  document.getElementById('levelBar').innerHTML=L.map((l,i)=>`<button class="lvl${i===cur?' on':''}" onclick="go(${i})">${l.t}${done.has(i)?'<span class="ck">✓</span>':''}</button>`).join('');
+  document.getElementById('lt').textContent=L.length;
+  document.getElementById('lc').textContent=done.size;
 }
 
-function zoneHTML(z) {
-  const icon = z.num ? `<span class="num">${z.num}</span>` : `<span class="dot"></span>`;
-  return `<div class="drop-zone ${z.css}" data-zone="${z.id}"
-    ondragover="handleDragOver(event)" ondragleave="handleDragLeave(event)" ondrop="handleDrop(event)">
-    <div class="zone-title">${icon}${z.label}</div>
-    <div class="zone-items"></div>
-  </div>`;
+function dzHTML(z){
+  const ico=z.num?`<span class="dz-num">${z.num}</span>`:`<span class="dz-dot"></span>`;
+  return`<div class="dz ${z.c}" data-z="${z.id}" ondragover="dOver(event)" ondragleave="dLeave(event)" ondrop="dDrop(event)"><div class="dz-head">${ico}<span class="dz-label">${z.label}</span></div><div class="dz-items"></div></div>`;
 }
 
-function renderLevel() {
-  const level = LEVELS[currentLevel];
-  const container = document.getElementById('gameContainer');
-  const shuffled = [...level.items].sort(() => Math.random() - 0.5);
-  let zonesHTML = '';
-
-  if (level.layout === 'compass') {
-    const byPos = {};
-    level.zones.forEach(z => byPos[z.pos] = z);
-    zonesHTML = `<div class="compass-layout">
-      <div class="compass-top">${zoneHTML(byPos.top)}</div>
-      <div class="compass-left">${zoneHTML(byPos.left)}</div>
-      <div class="compass-center">
-        <div class="compass-hub">
-          <div class="hub-labels">
-            <div class="hub-top">Percepire</div>
-            <div class="hub-mid">
-              <span class="hub-left">Fare ←</span>
-              <span class="hub-right">→ Osservare</span>
-            </div>
-            <div class="hub-bottom">Pensare</div>
-          </div>
-        </div>
+function render(){
+  const lv=L[cur],el=document.getElementById('app');
+  const sh=[...lv.items].sort(()=>Math.random()-.5);
+  let zones='';
+  if(lv.lay==='compass'){
+    const p={};lv.zones.forEach(z=>p[z.pos]=z);
+    zones=`<div class="compass">
+      <div class="compass-top">${dzHTML(p.top)}</div>
+      <div class="compass-left">${dzHTML(p.left)}</div>
+      <div class="compass-hub">
+        <span class="hub-t hub-n">Percepire</span>
+        <span class="hub-t hub-s">Pensare</span>
+        <span class="hub-t hub-w">Fare</span>
+        <span class="hub-t hub-e">Osservare</span>
+        <span class="hub-arrow hub-a1">↗</span>
+        <span class="hub-arrow hub-a2">↗</span>
       </div>
-      <div class="compass-right">${zoneHTML(byPos.right)}</div>
-      <div class="compass-bottom">${zoneHTML(byPos.bottom)}</div>
+      <div class="compass-right">${dzHTML(p.right)}</div>
+      <div class="compass-bot">${dzHTML(p.bot)}</div>
     </div>`;
-  } else {
-    zonesHTML = `<div class="drop-grid">${level.zones.map(z => zoneHTML(z)).join('')}</div>`;
+  }else{
+    zones=`<div class="grid4">${lv.zones.map(z=>dzHTML(z)).join('')}</div>`;
   }
-
-  container.innerHTML = `
-    <div class="instructions">${level.instruction}</div>
-    ${zonesHTML}
-    <div class="word-bank">
-      <div class="word-bank-title">Trascina le parole ↑</div>
-      <div class="word-bank-items" id="wordBank"
-           ondragover="handleDragOver(event)" ondragleave="handleDragLeave(event)" ondrop="handleDropBank(event)">
-        ${shuffled.map((item, i) => `
-          <div class="drag-item" draggable="true" data-correct="${item.zone}" data-id="item-${i}"
-               ondragstart="handleDragStart(event)" ondragend="handleDragEnd(event)">${item.text}</div>
-        `).join('')}
-      </div>
-    </div>
-    <div class="btn-row">
-      <button class="btn btn-reset" onclick="resetLevel()">↺ Ricomincia</button>
-      <button class="btn btn-check" onclick="checkAnswers()">Verifica ✓</button>
-    </div>
-    <div class="feedback" id="feedback"></div>`;
-  setupTouchDrag();
-  updateScoreDisplay();
+  el.innerHTML=`<div class="hint">${lv.hint}</div>${zones}<div class="bank"><div class="bank-label">Trascina le parole ↑</div><div class="bank-items" id="wb" ondragover="dOver(event)" ondragleave="dLeave(event)" ondrop="dBank(event)">${sh.map((it,i)=>`<div class="chip" draggable="true" data-ok="${it.z}" data-i="${i}" ondragstart="ds(event)" ondragend="de(event)">${it.t}</div>`).join('')}</div></div><div class="btns"><button class="bt bt-rs" onclick="reset()">↺ Ricomincia</button><button class="bt bt-go" onclick="check()">Verifica ✓</button></div><div class="fb" id="fb"></div>`;
+  touch();upd();
 }
 
-// ── DRAG & DROP ──
-let draggedEl = null;
-function handleDragStart(e) { draggedEl = e.target; e.target.classList.add('dragging'); e.dataTransfer.effectAllowed = 'move'; e.dataTransfer.setData('text/plain',''); }
-function handleDragEnd(e) { e.target.classList.remove('dragging'); draggedEl = null; document.querySelectorAll('.drop-zone').forEach(z => z.classList.remove('drag-over')); }
-function handleDragOver(e) { e.preventDefault(); const z = e.target.closest('.drop-zone'); if(z) z.classList.add('drag-over'); }
-function handleDragLeave(e) { const z = e.target.closest('.drop-zone'); if(z) z.classList.remove('drag-over'); }
-function handleDrop(e) {
-  e.preventDefault(); const zone = e.target.closest('.drop-zone');
-  if(!zone||!draggedEl||draggedEl.classList.contains('correct')) return;
-  zone.classList.remove('drag-over');
-  zone.querySelector('.zone-items').appendChild(draggedEl);
-  draggedEl.classList.remove('wrong');
-}
-function handleDropBank(e) {
-  e.preventDefault();
-  if(!draggedEl||draggedEl.classList.contains('correct')) return;
-  document.getElementById('wordBank').appendChild(draggedEl);
-  draggedEl.classList.remove('wrong');
-}
+/* ── DRAG MOUSE ── */
+let D=null;
+function ds(e){D=e.target;D.classList.add('dragging');e.dataTransfer.effectAllowed='move';e.dataTransfer.setData('text/plain','')}
+function de(e){e.target.classList.remove('dragging');D=null;document.querySelectorAll('.dz').forEach(z=>z.classList.remove('over'))}
+function dOver(e){e.preventDefault();const z=e.target.closest('.dz');if(z)z.classList.add('over')}
+function dLeave(e){const z=e.target.closest('.dz');if(z)z.classList.remove('over')}
+function dDrop(e){e.preventDefault();const z=e.target.closest('.dz');if(!z||!D||D.classList.contains('ok'))return;z.classList.remove('over');z.querySelector('.dz-items').appendChild(D);D.classList.remove('err')}
+function dBank(e){e.preventDefault();if(!D||D.classList.contains('ok'))return;document.getElementById('wb').appendChild(D);D.classList.remove('err')}
 
-// ── TOUCH ──
-let touchItem=null, ghost=null, touchOX=0, touchOY=0;
-function setupTouchDrag() {
-  document.querySelectorAll('.drag-item').forEach(el => {
-    el.addEventListener('touchstart', onTS, {passive:false});
-    el.addEventListener('touchmove', onTM, {passive:false});
-    el.addEventListener('touchend', onTE, {passive:false});
-  });
-}
-function onTS(e) {
-  if(e.target.classList.contains('correct')) return;
-  e.preventDefault(); touchItem = e.target.closest('.drag-item'); if(!touchItem) return;
-  const t=e.touches[0], r=touchItem.getBoundingClientRect();
-  touchOX=t.clientX-r.left; touchOY=t.clientY-r.top;
-  ghost=touchItem.cloneNode(true); ghost.className='drag-item drag-ghost';
-  ghost.style.width=r.width+'px'; ghost.style.left=(t.clientX-touchOX)+'px'; ghost.style.top=(t.clientY-touchOY)+'px';
-  document.body.appendChild(ghost); touchItem.classList.add('dragging');
-}
-function onTM(e) {
-  if(!touchItem||!ghost) return; e.preventDefault();
-  const t=e.touches[0]; ghost.style.left=(t.clientX-touchOX)+'px'; ghost.style.top=(t.clientY-touchOY)+'px';
-  document.querySelectorAll('.drop-zone').forEach(z=>z.classList.remove('drag-over'));
-  const el=document.elementFromPoint(t.clientX,t.clientY);
-  if(el){const z=el.closest('.drop-zone'); if(z)z.classList.add('drag-over');}
-}
-function onTE(e) {
-  if(!touchItem||!ghost) return; e.preventDefault();
-  const t=e.changedTouches[0]; ghost.remove(); ghost=null;
-  touchItem.classList.remove('dragging');
-  document.querySelectorAll('.drop-zone').forEach(z=>z.classList.remove('drag-over'));
-  const el=document.elementFromPoint(t.clientX,t.clientY);
-  if(el){
-    const z=el.closest('.drop-zone');
-    if(z&&!touchItem.classList.contains('correct')){touchItem.classList.remove('wrong'); z.querySelector('.zone-items').appendChild(touchItem);}
-    else if(!touchItem.classList.contains('correct')){document.getElementById('wordBank').appendChild(touchItem); touchItem.classList.remove('wrong');}
-  }
-  touchItem=null;
-}
+/* ── TOUCH ── */
+let TI=null,G=null,ox=0,oy=0;
+function touch(){document.querySelectorAll('.chip').forEach(el=>{el.addEventListener('touchstart',ts,{passive:false});el.addEventListener('touchmove',tm,{passive:false});el.addEventListener('touchend',te,{passive:false})})}
+function ts(e){if(e.target.classList.contains('ok'))return;e.preventDefault();TI=e.target.closest('.chip');if(!TI)return;const t=e.touches[0],r=TI.getBoundingClientRect();ox=t.clientX-r.left;oy=t.clientY-r.top;G=TI.cloneNode(true);G.className='chip ghost';G.style.width=r.width+'px';G.style.left=(t.clientX-ox)+'px';G.style.top=(t.clientY-oy)+'px';document.body.appendChild(G);TI.classList.add('dragging')}
+function tm(e){if(!TI||!G)return;e.preventDefault();const t=e.touches[0];G.style.left=(t.clientX-ox)+'px';G.style.top=(t.clientY-oy)+'px';document.querySelectorAll('.dz').forEach(z=>z.classList.remove('over'));const el=document.elementFromPoint(t.clientX,t.clientY);if(el){const z=el.closest('.dz');if(z)z.classList.add('over')}}
+function te(e){if(!TI||!G)return;e.preventDefault();const t=e.changedTouches[0];G.remove();G=null;TI.classList.remove('dragging');document.querySelectorAll('.dz').forEach(z=>z.classList.remove('over'));const el=document.elementFromPoint(t.clientX,t.clientY);if(el){const z=el.closest('.dz');if(z&&!TI.classList.contains('ok')){TI.classList.remove('err');z.querySelector('.dz-items').appendChild(TI)}else if(!TI.classList.contains('ok')){document.getElementById('wb').appendChild(TI);TI.classList.remove('err')}}TI=null}
 
-// ── CHECK ──
-function checkAnswers() {
-  let correct=0, total=0;
-  const bankLeft = document.querySelectorAll('#wordBank .drag-item:not(.correct)');
-  document.querySelectorAll('.drop-zone').forEach(zone => {
-    const zid = zone.dataset.zone;
-    zone.querySelectorAll('.drag-item:not(.correct)').forEach(item => {
-      total++;
-      if(item.dataset.correct===zid){ item.classList.add('correct'); item.classList.remove('wrong'); item.draggable=false; correct++; score++; }
-      else{ item.classList.add('wrong'); setTimeout(()=>{item.classList.remove('wrong'); document.getElementById('wordBank').appendChild(item);},1200); }
+/* ── CHECK ── */
+function check(){
+  let ok=0,n=0;
+  const bk=document.querySelectorAll('#wb .chip:not(.ok)');
+  document.querySelectorAll('.dz').forEach(z=>{
+    const zid=z.dataset.z;
+    z.querySelectorAll('.chip:not(.ok)').forEach(c=>{
+      n++;
+      if(c.dataset.ok===zid){c.classList.add('ok');c.classList.remove('err');c.draggable=false;ok++;score++}
+      else{c.classList.add('err');setTimeout(()=>{c.classList.remove('err');document.getElementById('wb').appendChild(c)},1100)}
     });
   });
-  totalAttempted+=total;
-  if(bankLeft.length>0&&total===0){showFeedback('Posiziona tutte le parole prima di verificare!','partial'); return;}
-  const rem=document.querySelectorAll('.drag-item:not(.correct)').length;
-  if(rem===0){completedLevels.add(currentLevel); showFeedback('🎉 Perfetto! Livello completato!','perfect'); renderLevelBar();}
-  else if(correct>0) showFeedback(`${correct} corrette! Le altre tornano nel banco. Riprova!`,'partial');
-  else if(total>0) showFeedback('Nessuna corretta questa volta. Riprova con calma!','partial');
-  updateScoreDisplay();
+  if(bk.length>0&&n===0){fb('Posiziona tutte le parole prima di verificare!','try');return}
+  const rem=document.querySelectorAll('.chip:not(.ok)').length;
+  if(rem===0){done.add(cur);fb('🎉 Perfetto! Livello completato!','win');bar()}
+  else if(ok>0)fb(`${ok} corrette! Le altre tornano nel banco.`,'try');
+  else if(n>0)fb('Nessuna corretta. Riprova con calma!','try');
+  upd();
 }
-function showFeedback(msg,type){const f=document.getElementById('feedback'); f.textContent=msg; f.className=`feedback show ${type}`;}
-function updateScoreDisplay(){
-  document.getElementById('scoreDisplay').textContent=score;
-  document.getElementById('totalDisplay').textContent=LEVELS.reduce((s,l)=>s+l.items.length,0);
-}
-function switchLevel(i){currentLevel=i; renderLevelBar(); renderLevel();}
-function resetLevel(){
-  score-=document.querySelectorAll('.drag-item.correct').length;
-  if(score<0)score=0; completedLevels.delete(currentLevel); renderLevelBar(); renderLevel();
-}
+function fb(m,c){const f=document.getElementById('fb');f.textContent=m;f.className=`fb show ${c}`}
+function upd(){document.getElementById('sc').textContent=score;document.getElementById('tot').textContent=L.reduce((s,l)=>s+l.items.length,0)}
+function go(i){cur=i;bar();render()}
+function reset(){score-=document.querySelectorAll('.chip.ok').length;if(score<0)score=0;done.delete(cur);bar();render()}
 
-renderLevelBar(); renderLevel();
+bar();render();
 </script>
 </body>
 </html>
