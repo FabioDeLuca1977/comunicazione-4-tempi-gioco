@@ -1,0 +1,663 @@
+<!DOCTYPE html>
+<html lang="it">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Comunicazione a 4 Tempi — Il Gioco</title>
+<link href="https://fonts.googleapis.com/css2?family=DM+Serif+Display:ital@0;1&family=DM+Sans:wght@400;500;600;700&display=swap" rel="stylesheet">
+<style>
+  :root {
+    --acqua: #2E86AB;
+    --terra: #5B8C5A;
+    --fuoco: #D64933;
+    --aria: #E8A838;
+    --bg: #FAF7F2;
+    --ink: #2C2C2C;
+    --ink-light: #6B6B6B;
+    --card: #FFFFFF;
+    --shadow: 0 2px 16px rgba(0,0,0,0.08);
+    --shadow-hover: 0 6px 24px rgba(0,0,0,0.14);
+    --radius: 12px;
+    --correct: #3DA35D;
+    --wrong: #D64933;
+  }
+  * { margin:0; padding:0; box-sizing:border-box; }
+  body {
+    font-family: 'DM Sans', sans-serif;
+    background: var(--bg);
+    color: var(--ink);
+    min-height: 100vh;
+    overflow-x: hidden;
+  }
+  .game-header {
+    text-align: center;
+    padding: 20px 20px 10px;
+  }
+  .game-header h1 {
+    font-family: 'DM Serif Display', serif;
+    font-size: clamp(1.6rem, 4vw, 2.4rem);
+    color: var(--ink);
+    letter-spacing: -0.5px;
+    margin-bottom: 6px;
+  }
+  .game-header .subtitle {
+    font-size: 0.95rem;
+    color: var(--ink-light);
+  }
+  .level-bar {
+    display: flex;
+    justify-content: center;
+    gap: 6px;
+    padding: 8px 20px;
+    flex-wrap: wrap;
+  }
+  .level-btn {
+    padding: 6px 14px;
+    border: 2px solid #ddd;
+    border-radius: 30px;
+    background: var(--card);
+    font-family: 'DM Sans', sans-serif;
+    font-size: 0.8rem;
+    font-weight: 600;
+    cursor: pointer;
+    transition: all 0.25s ease;
+    color: var(--ink-light);
+    user-select: none;
+  }
+  .level-btn:hover { border-color: var(--acqua); color: var(--acqua); }
+  .level-btn.active { background: var(--ink); color: #fff; border-color: var(--ink); }
+  .level-btn .check { display: inline-block; margin-left: 4px; color: var(--correct); }
+  .score-bar {
+    display: flex;
+    justify-content: center;
+    gap: 24px;
+    padding: 4px 20px 12px;
+    font-size: 0.82rem;
+    color: var(--ink-light);
+  }
+  .score-bar span { font-weight: 600; color: var(--ink); }
+  .game-container {
+    max-width: 1060px;
+    margin: 0 auto;
+    padding: 0 20px 20px;
+  }
+  .instructions {
+    background: var(--card);
+    border-radius: var(--radius);
+    padding: 12px 18px;
+    margin-bottom: 14px;
+    box-shadow: var(--shadow);
+    font-size: 0.88rem;
+    line-height: 1.5;
+    border-left: 4px solid var(--acqua);
+  }
+  .instructions strong { color: var(--acqua); }
+
+  /* ── GRID LAYOUT (stili) ── */
+  .drop-grid {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 16px;
+    margin-bottom: 28px;
+  }
+  @media (max-width: 600px) { .drop-grid { grid-template-columns: 1fr; } }
+
+  /* ── COMPASS LAYOUT (4 tempi) ── */
+  .compass-layout {
+    display: grid;
+    grid-template-columns: 1fr 0.8fr 1fr;
+    grid-template-rows: auto auto auto;
+    grid-template-areas:
+      ".      top    ."
+      "left   center right"
+      ".      bottom .";
+    gap: 8px;
+    margin-bottom: 16px;
+    align-items: center;
+  }
+  .compass-top    { grid-area: top; }
+  .compass-right  { grid-area: right; }
+  .compass-bottom { grid-area: bottom; }
+  .compass-left   { grid-area: left; }
+  .compass-center { grid-area: center; display: flex; align-items: center; justify-content: center; }
+
+  .compass-hub {
+    width: 100%; aspect-ratio: 1;
+    max-width: 130px;
+    border-radius: 50%;
+    background: radial-gradient(circle, #f8f5f0 0%, #ece7df 100%);
+    border: 2px solid #ddd;
+    display: flex; align-items: center; justify-content: center;
+    position: relative;
+    margin: 0 auto;
+  }
+  .compass-hub::before, .compass-hub::after {
+    content: ''; position: absolute; background: #d0cdc6;
+  }
+  .compass-hub::before { width: 1px; height: 80%; top: 10%; left: 50%; }
+  .compass-hub::after  { height: 1px; width: 80%; left: 10%; top: 50%; }
+
+  .hub-labels {
+    position: relative; z-index: 1;
+    text-align: center;
+    font-size: 0.55rem;
+    font-weight: 700;
+    text-transform: uppercase;
+    letter-spacing: 0.6px;
+    line-height: 1.5;
+  }
+  .hub-top { color: var(--aria); }
+  .hub-right { color: var(--acqua); }
+  .hub-bottom { color: var(--terra); }
+  .hub-left { color: var(--fuoco); }
+  .hub-mid { display: flex; gap: 12px; justify-content: center; margin: 2px 0; }
+
+  /* Arrows between zones */
+  .compass-arrow {
+    position: absolute;
+    color: #ccc;
+    font-size: 1.4rem;
+    z-index: 2;
+    pointer-events: none;
+  }
+
+  @media (max-width: 700px) {
+    .compass-layout {
+      grid-template-columns: 1fr;
+      grid-template-areas: "top" "right" "bottom" "left";
+      gap: 12px;
+    }
+    .compass-center { display: none; }
+  }
+
+  /* ── DROP ZONE (shared) ── */
+  .drop-zone {
+    background: var(--card);
+    border: 2px dashed #d0d0d0;
+    border-radius: var(--radius);
+    padding: 10px;
+    min-height: 80px;
+    transition: all 0.25s ease;
+    position: relative;
+  }
+  .drop-zone.drag-over {
+    border-color: var(--acqua);
+    background: #f0f7fa;
+    transform: scale(1.01);
+  }
+  .drop-zone .zone-title {
+    font-family: 'DM Serif Display', serif;
+    font-size: 0.82rem;
+    margin-bottom: 6px;
+    padding-bottom: 4px;
+    border-bottom: 2px solid #eee;
+    display: flex; align-items: center; gap: 6px;
+  }
+  .drop-zone .zone-title .num {
+    display: inline-flex; align-items: center; justify-content: center;
+    width: 20px; height: 20px; border-radius: 50%;
+    font-family: 'DM Sans', sans-serif;
+    font-size: 0.7rem; font-weight: 700; color: #fff; flex-shrink: 0;
+  }
+  .drop-zone .zone-title .dot {
+    width: 10px; height: 10px; border-radius: 50%; flex-shrink: 0;
+  }
+  .drop-zone .zone-items {
+    display: flex; flex-wrap: wrap; gap: 6px; min-height: 32px;
+  }
+
+  /* Zone colors: 4 tempi */
+  .zone-apertura .zone-title { color: var(--aria); }
+  .zone-apertura .num { background: var(--aria); }
+  .zone-bisogni .zone-title { color: var(--acqua); }
+  .zone-bisogni .num { background: var(--acqua); }
+  .zone-argomentazioni .zone-title { color: var(--terra); }
+  .zone-argomentazioni .num { background: var(--terra); }
+  .zone-chiusura .zone-title { color: var(--fuoco); }
+  .zone-chiusura .num { background: var(--fuoco); }
+
+  /* Zone colors: stili */
+  .zone-adattivo .zone-title { color: var(--aria); }
+  .zone-adattivo .dot { background: var(--aria); }
+  .zone-divergente .zone-title { color: var(--acqua); }
+  .zone-divergente .dot { background: var(--acqua); }
+  .zone-assimilativo .zone-title { color: var(--terra); }
+  .zone-assimilativo .dot { background: var(--terra); }
+  .zone-convergente .zone-title { color: var(--fuoco); }
+  .zone-convergente .dot { background: var(--fuoco); }
+
+  /* Zone colors: assi */
+  .zone-ec .zone-title { color: var(--aria); }
+  .zone-ec .dot { background: var(--aria); }
+  .zone-or .zone-title { color: var(--acqua); }
+  .zone-or .dot { background: var(--acqua); }
+  .zone-ca .zone-title { color: var(--terra); }
+  .zone-ca .dot { background: var(--terra); }
+  .zone-sa .zone-title { color: var(--fuoco); }
+  .zone-sa .dot { background: var(--fuoco); }
+
+  /* ── WORD BANK ── */
+  .word-bank {
+    background: var(--card);
+    border-radius: var(--radius);
+    padding: 14px;
+    box-shadow: var(--shadow);
+  }
+  .word-bank-title {
+    font-size: 0.75rem; text-transform: uppercase;
+    letter-spacing: 1.2px; color: var(--ink-light);
+    margin-bottom: 8px; font-weight: 700;
+  }
+  .word-bank-items { display: flex; flex-wrap: wrap; gap: 6px; }
+
+  /* ── DRAGGABLE ── */
+  .drag-item {
+    padding: 5px 11px;
+    background: #F2F0EC;
+    border: 1.5px solid #ddd;
+    border-radius: 8px;
+    font-size: 0.78rem;
+    font-weight: 500;
+    cursor: grab;
+    user-select: none;
+    transition: all 0.2s ease;
+    touch-action: none;
+  }
+  .drag-item:hover { box-shadow: var(--shadow-hover); transform: translateY(-1px); border-color: #bbb; }
+  .drag-item.dragging { opacity: 0.4; cursor: grabbing; }
+  .drag-item.correct { background: #e8f5e9; border-color: var(--correct); color: var(--correct); cursor: default; }
+  .drag-item.wrong { background: #ffebee; border-color: var(--wrong); color: var(--wrong); animation: shake 0.4s ease; }
+
+  @keyframes shake {
+    0%,100% { transform: translateX(0); }
+    20% { transform: translateX(-6px); }
+    40% { transform: translateX(6px); }
+    60% { transform: translateX(-4px); }
+    80% { transform: translateX(4px); }
+  }
+
+  .btn-row { display: flex; justify-content: center; gap: 12px; margin-top: 14px; flex-wrap: wrap; }
+  .btn {
+    padding: 10px 28px; border: none; border-radius: 30px;
+    font-family: 'DM Sans', sans-serif; font-size: 0.9rem;
+    font-weight: 700; cursor: pointer; transition: all 0.25s ease; user-select: none;
+  }
+  .btn-check { background: var(--ink); color: #fff; }
+  .btn-check:hover { background: #444; transform: translateY(-1px); }
+  .btn-reset { background: transparent; color: var(--ink-light); border: 2px solid #ddd; }
+  .btn-reset:hover { border-color: #bbb; color: var(--ink); }
+
+  .feedback {
+    text-align: center; margin-top: 12px; padding: 12px;
+    border-radius: var(--radius); font-weight: 600; font-size: 0.9rem; display: none;
+  }
+  .feedback.show { display: block; }
+  .feedback.perfect { background: #e8f5e9; color: var(--correct); }
+  .feedback.partial { background: #fff3e0; color: #e65100; }
+
+  .drag-ghost { position: fixed; pointer-events: none; z-index: 9999; opacity: 0.9; transform: scale(1.05); }
+</style>
+</head>
+<body>
+
+<div class="game-header">
+  <h1>Comunicazione a 4 Tempi</h1>
+  <p class="subtitle">Trascina ogni parola nella categoria corretta</p>
+</div>
+<div class="level-bar" id="levelBar"></div>
+<div class="score-bar">
+  Punteggio: <span id="scoreDisplay">0</span> / <span id="totalDisplay">0</span>
+  &nbsp;·&nbsp;
+  Livelli completati: <span id="levelsComplete">0</span> / <span id="levelsTotal">0</span>
+</div>
+<div class="game-container" id="gameContainer"></div>
+
+<script>
+const LEVELS = [
+  {
+    id: 'tempi',
+    title: '1. I 4 Tempi',
+    layout: 'compass',
+    instruction: 'Associa ogni descrizione al <strong>tempo comunicativo</strong> corretto. I 4 tempi seguono il percorso circolare del modello: dall\'apertura alla chiusura.',
+    zones: [
+      { id: 'apertura', label: 'Apertura e Connessione', css: 'zone-apertura', num: '1', pos: 'top' },
+      { id: 'bisogni', label: 'Condivisione dei Bisogni', css: 'zone-bisogni', num: '2', pos: 'right' },
+      { id: 'argomentazioni', label: 'Argomentazioni e Concetti', css: 'zone-argomentazioni', num: '3', pos: 'bottom' },
+      { id: 'chiusura', label: 'Chiusura e Spinta all\'Azione', css: 'zone-chiusura', num: '4', pos: 'left' }
+    ],
+    items: [
+      { text: 'Creare un ponte con l\'altro', zone: 'apertura' },
+      { text: 'Parlare la sua lingua', zone: 'apertura' },
+      { text: 'Prima la relazione', zone: 'apertura' },
+      { text: 'Richiesta ≠ Bisogno', zone: 'bisogni' },
+      { text: 'Le domande che aprono', zone: 'bisogni' },
+      { text: '"Cosa la preoccupa?"', zone: 'bisogni' },
+      { text: 'La regola dei 3', zone: 'argomentazioni' },
+      { text: 'Sicurezza, Efficacia, Risparmio', zone: 'argomentazioni' },
+      { text: 'Il cliente ricorda max 3 messaggi', zone: 'argomentazioni' },
+      { text: 'Accompagnare la decisione', zone: 'chiusura' },
+      { text: '"Vuole provare e poi ne riparliamo?"', zone: 'chiusura' },
+      { text: 'Non forzare ma guidare', zone: 'chiusura' }
+    ]
+  },
+  {
+    id: 'stili',
+    title: '2. I 4 Stili',
+    layout: 'grid',
+    instruction: 'Associa ogni caratteristica allo <strong>stile comunicativo</strong> corretto secondo il modello Kolb / Social Style.',
+    zones: [
+      { id: 'adattivo', label: 'Adattivo (Accomodatore)', css: 'zone-adattivo' },
+      { id: 'divergente', label: 'Divergente', css: 'zone-divergente' },
+      { id: 'assimilativo', label: 'Assimilativo', css: 'zone-assimilativo' },
+      { id: 'convergente', label: 'Convergente', css: 'zone-convergente' }
+    ],
+    items: [
+      { text: 'Cerca riconoscimento', zone: 'adattivo' },
+      { text: 'Ama divertirsi', zone: 'adattivo' },
+      { text: 'Impulsivo e emotivo', zone: 'adattivo' },
+      { text: 'Cerca armonia e cortesia', zone: 'divergente' },
+      { text: 'Supporta e aiuta', zone: 'divergente' },
+      { text: 'Vuole essere rassicurato', zone: 'divergente' },
+      { text: 'Accuratezza e controllo', zone: 'assimilativo' },
+      { text: 'Metodico e organizzato', zone: 'assimilativo' },
+      { text: 'Vuole dati e spazio per analizzarli', zone: 'assimilativo' },
+      { text: 'Controllo dei risultati', zone: 'convergente' },
+      { text: 'Efficiente e diretto', zone: 'convergente' },
+      { text: 'Va dritto allo scopo', zone: 'convergente' }
+    ]
+  },
+  {
+    id: 'assi',
+    title: '3. Gli Assi',
+    layout: 'grid',
+    instruction: 'Associa ogni concetto all\'<strong>asse del modello</strong> corretto. Gli assi rappresentano come raccogliamo e gestiamo le informazioni.',
+    zones: [
+      { id: 'ec', label: 'Esperienza Concreta', css: 'zone-ec' },
+      { id: 'or', label: 'Osservazione Riflessiva', css: 'zone-or' },
+      { id: 'ca', label: 'Concettualizzazione Astratta', css: 'zone-ca' },
+      { id: 'sa', label: 'Sperimentazione Attiva', css: 'zone-sa' }
+    ],
+    items: [
+      { text: 'Percepire', zone: 'ec' },
+      { text: 'Relazioni', zone: 'ec' },
+      { text: 'Percorso intuitivo', zone: 'ec' },
+      { text: 'Osservare', zone: 'or' },
+      { text: 'Ascolto e Analisi', zone: 'or' },
+      { text: 'Tanti dettagli per esprimere un concetto', zone: 'or' },
+      { text: 'Pensare', zone: 'ca' },
+      { text: 'Contenuti', zone: 'ca' },
+      { text: 'Percorso analitico', zone: 'ca' },
+      { text: 'Fare', zone: 'sa' },
+      { text: 'Azione', zone: 'sa' },
+      { text: 'Poche parole per esprimere un concetto', zone: 'sa' }
+    ]
+  },
+  {
+    id: 'bisogni_stili',
+    title: '4. Bisogni degli Stili',
+    layout: 'grid',
+    instruction: 'Ogni stile ha bisogni specifici. Abbina ciascun <strong>bisogno</strong> allo stile corrispondente.',
+    zones: [
+      { id: 'adattivo', label: 'Adattivo (Accomodatore)', css: 'zone-adattivo' },
+      { id: 'divergente', label: 'Divergente', css: 'zone-divergente' },
+      { id: 'assimilativo', label: 'Assimilativo', css: 'zone-assimilativo' },
+      { id: 'convergente', label: 'Convergente', css: 'zone-convergente' }
+    ],
+    items: [
+      { text: 'Visione d\'insieme', zone: 'adattivo' },
+      { text: 'Soluzioni consensuali', zone: 'adattivo' },
+      { text: 'Coinvolgimento', zone: 'adattivo' },
+      { text: 'Rassicurazione sulle scelte', zone: 'divergente' },
+      { text: 'Comprensione della prospettiva', zone: 'divergente' },
+      { text: 'Mettere a proprio agio', zone: 'divergente' },
+      { text: 'Informazioni dettagliate', zone: 'assimilativo' },
+      { text: 'Tempo per analizzare', zone: 'assimilativo' },
+      { text: 'Presidio dei processi', zone: 'assimilativo' },
+      { text: 'Efficienza nei risultati', zone: 'convergente' },
+      { text: 'Coerenza negli atteggiamenti', zone: 'convergente' },
+      { text: 'Velocità d\'azione', zone: 'convergente' }
+    ]
+  },
+  {
+    id: 'forze_deb',
+    title: '5. Punti di Forza',
+    layout: 'grid',
+    instruction: 'Associa ciascun <strong>punto di forza</strong> allo stile comunicativo corretto.',
+    zones: [
+      { id: 'adattivo', label: 'Adattivo (Accomodatore)', css: 'zone-adattivo' },
+      { id: 'divergente', label: 'Divergente', css: 'zone-divergente' },
+      { id: 'assimilativo', label: 'Assimilativo', css: 'zone-assimilativo' },
+      { id: 'convergente', label: 'Convergente', css: 'zone-convergente' }
+    ],
+    items: [
+      { text: 'Persuasione', zone: 'adattivo' },
+      { text: 'Intrattenimento', zone: 'adattivo' },
+      { text: 'Diffusione', zone: 'adattivo' },
+      { text: 'Ascolto', zone: 'divergente' },
+      { text: 'Teamwork', zone: 'divergente' },
+      { text: 'Esecuzione', zone: 'divergente' },
+      { text: 'Pianificazione', zone: 'assimilativo' },
+      { text: 'Sistematizzazione', zone: 'assimilativo' },
+      { text: 'Orchestrazione', zone: 'assimilativo' },
+      { text: 'Leadership', zone: 'convergente' },
+      { text: 'Iniziativa e organizzazione', zone: 'convergente' },
+      { text: 'Efficienza e risultati', zone: 'convergente' }
+    ]
+  },
+  {
+    id: 'centri',
+    title: '6. Centri di Interesse',
+    layout: 'grid',
+    instruction: 'Ogni stile è interessato a contenuti diversi. Associa ciascun <strong>centro di interesse</strong> allo stile corretto.',
+    zones: [
+      { id: 'adattivo', label: 'Adattivo (Accomodatore)', css: 'zone-adattivo' },
+      { id: 'divergente', label: 'Divergente', css: 'zone-divergente' },
+      { id: 'assimilativo', label: 'Assimilativo', css: 'zone-assimilativo' },
+      { id: 'convergente', label: 'Convergente', css: 'zone-convergente' }
+    ],
+    items: [
+      { text: 'Opinioni personali', zone: 'adattivo' },
+      { text: 'Casi pratici', zone: 'adattivo' },
+      { text: 'Immagini accattivanti', zone: 'adattivo' },
+      { text: 'Persona al centro', zone: 'divergente' },
+      { text: 'Sicurezza e affidabilità', zone: 'divergente' },
+      { text: 'Condivisione degli esperti', zone: 'divergente' },
+      { text: 'Accuratezza nei razionali', zone: 'assimilativo' },
+      { text: 'Numero e qualità dei dati', zone: 'assimilativo' },
+      { text: 'Risultati di efficacia', zone: 'convergente' },
+      { text: 'Velocità d\'azione', zone: 'convergente' },
+      { text: 'Principali vantaggi d\'uso', zone: 'convergente' }
+    ]
+  },
+  {
+    id: 'stress',
+    title: '7. Sotto Stress',
+    layout: 'grid',
+    instruction: 'Come reagisce ogni stile <strong>sotto stress</strong>? Associa i comportamenti al profilo corretto.',
+    zones: [
+      { id: 'adattivo', label: 'Adattivo (Accomodatore)', css: 'zone-adattivo' },
+      { id: 'divergente', label: 'Divergente', css: 'zone-divergente' },
+      { id: 'assimilativo', label: 'Assimilativo', css: 'zone-assimilativo' },
+      { id: 'convergente', label: 'Convergente', css: 'zone-convergente' }
+    ],
+    items: [
+      { text: 'Diventa impulsivo', zone: 'adattivo' },
+      { text: 'Poco selettivo', zone: 'adattivo' },
+      { text: 'Diventa sedentario e rigido', zone: 'divergente' },
+      { text: 'Eccesso di sensibilità', zone: 'divergente' },
+      { text: 'Diventa rigido e critico', zone: 'assimilativo' },
+      { text: 'Perfezionismo eccessivo', zone: 'assimilativo' },
+      { text: 'Diventa direttivo', zone: 'convergente' },
+      { text: 'Arrogante e spietato', zone: 'convergente' }
+    ]
+  }
+];
+
+let currentLevel = 0, score = 0, totalAttempted = 0, completedLevels = new Set();
+
+function renderLevelBar() {
+  document.getElementById('levelBar').innerHTML = LEVELS.map((l, i) => `
+    <button class="level-btn ${i === currentLevel ? 'active' : ''}" onclick="switchLevel(${i})">
+      ${l.title}${completedLevels.has(i) ? '<span class="check">✓</span>' : ''}
+    </button>
+  `).join('');
+  document.getElementById('levelsTotal').textContent = LEVELS.length;
+  document.getElementById('levelsComplete').textContent = completedLevels.size;
+}
+
+function zoneHTML(z) {
+  const icon = z.num ? `<span class="num">${z.num}</span>` : `<span class="dot"></span>`;
+  return `<div class="drop-zone ${z.css}" data-zone="${z.id}"
+    ondragover="handleDragOver(event)" ondragleave="handleDragLeave(event)" ondrop="handleDrop(event)">
+    <div class="zone-title">${icon}${z.label}</div>
+    <div class="zone-items"></div>
+  </div>`;
+}
+
+function renderLevel() {
+  const level = LEVELS[currentLevel];
+  const container = document.getElementById('gameContainer');
+  const shuffled = [...level.items].sort(() => Math.random() - 0.5);
+  let zonesHTML = '';
+
+  if (level.layout === 'compass') {
+    const byPos = {};
+    level.zones.forEach(z => byPos[z.pos] = z);
+    zonesHTML = `<div class="compass-layout">
+      <div class="compass-top">${zoneHTML(byPos.top)}</div>
+      <div class="compass-left">${zoneHTML(byPos.left)}</div>
+      <div class="compass-center">
+        <div class="compass-hub">
+          <div class="hub-labels">
+            <div class="hub-top">Percepire</div>
+            <div class="hub-mid">
+              <span class="hub-left">Fare ←</span>
+              <span class="hub-right">→ Osservare</span>
+            </div>
+            <div class="hub-bottom">Pensare</div>
+          </div>
+        </div>
+      </div>
+      <div class="compass-right">${zoneHTML(byPos.right)}</div>
+      <div class="compass-bottom">${zoneHTML(byPos.bottom)}</div>
+    </div>`;
+  } else {
+    zonesHTML = `<div class="drop-grid">${level.zones.map(z => zoneHTML(z)).join('')}</div>`;
+  }
+
+  container.innerHTML = `
+    <div class="instructions">${level.instruction}</div>
+    ${zonesHTML}
+    <div class="word-bank">
+      <div class="word-bank-title">Trascina le parole ↑</div>
+      <div class="word-bank-items" id="wordBank"
+           ondragover="handleDragOver(event)" ondragleave="handleDragLeave(event)" ondrop="handleDropBank(event)">
+        ${shuffled.map((item, i) => `
+          <div class="drag-item" draggable="true" data-correct="${item.zone}" data-id="item-${i}"
+               ondragstart="handleDragStart(event)" ondragend="handleDragEnd(event)">${item.text}</div>
+        `).join('')}
+      </div>
+    </div>
+    <div class="btn-row">
+      <button class="btn btn-reset" onclick="resetLevel()">↺ Ricomincia</button>
+      <button class="btn btn-check" onclick="checkAnswers()">Verifica ✓</button>
+    </div>
+    <div class="feedback" id="feedback"></div>`;
+  setupTouchDrag();
+  updateScoreDisplay();
+}
+
+// ── DRAG & DROP ──
+let draggedEl = null;
+function handleDragStart(e) { draggedEl = e.target; e.target.classList.add('dragging'); e.dataTransfer.effectAllowed = 'move'; e.dataTransfer.setData('text/plain',''); }
+function handleDragEnd(e) { e.target.classList.remove('dragging'); draggedEl = null; document.querySelectorAll('.drop-zone').forEach(z => z.classList.remove('drag-over')); }
+function handleDragOver(e) { e.preventDefault(); const z = e.target.closest('.drop-zone'); if(z) z.classList.add('drag-over'); }
+function handleDragLeave(e) { const z = e.target.closest('.drop-zone'); if(z) z.classList.remove('drag-over'); }
+function handleDrop(e) {
+  e.preventDefault(); const zone = e.target.closest('.drop-zone');
+  if(!zone||!draggedEl||draggedEl.classList.contains('correct')) return;
+  zone.classList.remove('drag-over');
+  zone.querySelector('.zone-items').appendChild(draggedEl);
+  draggedEl.classList.remove('wrong');
+}
+function handleDropBank(e) {
+  e.preventDefault();
+  if(!draggedEl||draggedEl.classList.contains('correct')) return;
+  document.getElementById('wordBank').appendChild(draggedEl);
+  draggedEl.classList.remove('wrong');
+}
+
+// ── TOUCH ──
+let touchItem=null, ghost=null, touchOX=0, touchOY=0;
+function setupTouchDrag() {
+  document.querySelectorAll('.drag-item').forEach(el => {
+    el.addEventListener('touchstart', onTS, {passive:false});
+    el.addEventListener('touchmove', onTM, {passive:false});
+    el.addEventListener('touchend', onTE, {passive:false});
+  });
+}
+function onTS(e) {
+  if(e.target.classList.contains('correct')) return;
+  e.preventDefault(); touchItem = e.target.closest('.drag-item'); if(!touchItem) return;
+  const t=e.touches[0], r=touchItem.getBoundingClientRect();
+  touchOX=t.clientX-r.left; touchOY=t.clientY-r.top;
+  ghost=touchItem.cloneNode(true); ghost.className='drag-item drag-ghost';
+  ghost.style.width=r.width+'px'; ghost.style.left=(t.clientX-touchOX)+'px'; ghost.style.top=(t.clientY-touchOY)+'px';
+  document.body.appendChild(ghost); touchItem.classList.add('dragging');
+}
+function onTM(e) {
+  if(!touchItem||!ghost) return; e.preventDefault();
+  const t=e.touches[0]; ghost.style.left=(t.clientX-touchOX)+'px'; ghost.style.top=(t.clientY-touchOY)+'px';
+  document.querySelectorAll('.drop-zone').forEach(z=>z.classList.remove('drag-over'));
+  const el=document.elementFromPoint(t.clientX,t.clientY);
+  if(el){const z=el.closest('.drop-zone'); if(z)z.classList.add('drag-over');}
+}
+function onTE(e) {
+  if(!touchItem||!ghost) return; e.preventDefault();
+  const t=e.changedTouches[0]; ghost.remove(); ghost=null;
+  touchItem.classList.remove('dragging');
+  document.querySelectorAll('.drop-zone').forEach(z=>z.classList.remove('drag-over'));
+  const el=document.elementFromPoint(t.clientX,t.clientY);
+  if(el){
+    const z=el.closest('.drop-zone');
+    if(z&&!touchItem.classList.contains('correct')){touchItem.classList.remove('wrong'); z.querySelector('.zone-items').appendChild(touchItem);}
+    else if(!touchItem.classList.contains('correct')){document.getElementById('wordBank').appendChild(touchItem); touchItem.classList.remove('wrong');}
+  }
+  touchItem=null;
+}
+
+// ── CHECK ──
+function checkAnswers() {
+  let correct=0, total=0;
+  const bankLeft = document.querySelectorAll('#wordBank .drag-item:not(.correct)');
+  document.querySelectorAll('.drop-zone').forEach(zone => {
+    const zid = zone.dataset.zone;
+    zone.querySelectorAll('.drag-item:not(.correct)').forEach(item => {
+      total++;
+      if(item.dataset.correct===zid){ item.classList.add('correct'); item.classList.remove('wrong'); item.draggable=false; correct++; score++; }
+      else{ item.classList.add('wrong'); setTimeout(()=>{item.classList.remove('wrong'); document.getElementById('wordBank').appendChild(item);},1200); }
+    });
+  });
+  totalAttempted+=total;
+  if(bankLeft.length>0&&total===0){showFeedback('Posiziona tutte le parole prima di verificare!','partial'); return;}
+  const rem=document.querySelectorAll('.drag-item:not(.correct)').length;
+  if(rem===0){completedLevels.add(currentLevel); showFeedback('🎉 Perfetto! Livello completato!','perfect'); renderLevelBar();}
+  else if(correct>0) showFeedback(`${correct} corrette! Le altre tornano nel banco. Riprova!`,'partial');
+  else if(total>0) showFeedback('Nessuna corretta questa volta. Riprova con calma!','partial');
+  updateScoreDisplay();
+}
+function showFeedback(msg,type){const f=document.getElementById('feedback'); f.textContent=msg; f.className=`feedback show ${type}`;}
+function updateScoreDisplay(){
+  document.getElementById('scoreDisplay').textContent=score;
+  document.getElementById('totalDisplay').textContent=LEVELS.reduce((s,l)=>s+l.items.length,0);
+}
+function switchLevel(i){currentLevel=i; renderLevelBar(); renderLevel();}
+function resetLevel(){
+  score-=document.querySelectorAll('.drag-item.correct').length;
+  if(score<0)score=0; completedLevels.delete(currentLevel); renderLevelBar(); renderLevel();
+}
+
+renderLevelBar(); renderLevel();
+</script>
+</body>
+</html>
